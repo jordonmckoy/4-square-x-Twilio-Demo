@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>4 Square x Twilio RESTful Demo</title>
+    <!-- Custom styles for this template -->
+    <link href="css/sticky-footer.css" rel="stylesheet">
+
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.0/css/bootstrap.min.css">
+
+	<style type="text/css">
+	body {background: url('img/vectorial-map.jpg') no-repeat 45% 35%; height: 700px}
+	.container {background-color: white; height: 100%; max-width: 1100px; margin-top: 2em; border: 2px black solid;}
+	.left-container {float: left; width: 35%}
+	.right-container {float: right; text-align: center;}
+	#message_field {height: 33px;}
+	#search_4 {margin-left: 5px;}
+	#send_btn {margin-top: 1em;}
+	#mapborder {border: 2px solid black;}
+
+	/* Gradient color1 - color2 - color1 */
+		
+	hr.style-one {
+	    border: 0;
+	    height: 1px;
+	    background: #333;
+	    background-image: -webkit-linear-gradient(left, #ccc, #333, #ccc); 
+	    background-image:    -moz-linear-gradient(left, #ccc, #333, #ccc); 
+	    background-image:     -ms-linear-gradient(left, #ccc, #333, #ccc); 
+	    background-image:      -o-linear-gradient(left, #ccc, #333, #ccc); 
+	}
+
+	</style>
+
+  </head>
+
+  <body>
+
+	<!-- Begin page content -->
+	<div class="container">
+		<div class="page-header">
+			<h1>Text your favourite location to yourself!</h1>
+			<p>Enter a venue name to start</p>
+			<hr class="style-one">
+	  	</div>
+	  	
+		<div class="left-container">
+			
+		  	<div class="row">
+				  <div class="col-xs-12">
+					  <br/>
+					  <div id="rest_box">
+						<input type="text" id="message_field" name="message_field" value="" />
+						<button type="button" class="btn btn-primary" id="search_4">Search</button>
+					  </div>
+				  </div>
+		  	</div> 
+		  	<div class="row">
+				  <div class="col-xs-12">
+					<br/>
+					  <div>
+						<div id="results"></div>
+					  </div>
+				  </div>
+		  	</div> 
+		  	<div class="row">
+		  		<div class="col-xs-12">
+		  			<br/>
+		  			<div>
+		  				<div id="diagnostic"></div>
+		  			</div>
+		  		</div>
+		  	</div>
+		</div>
+		<div class="right-container">
+			<div id="mapborder">
+			<iframe
+			  id="mapframe"
+			  width="600"
+			  height="450"
+			  frameborder="0" style="border:0"
+			  src="https://www.google.com/maps/embed/v1/place?key=AIzaSyDopAL7jlhmAoAJ5x7W-bfhWqkRDQ0kIMM
+			    &q=Guelph+ON">
+			</iframe>
+			</div>
+
+			<button type="button" class="btn btn-success" id="send_btn">Send Location</button>
+		</div>
+	  
+	</div>
+
+	<div class="footer">
+	  <div class="foot-container">
+		  <p class="text-muted">Jordon McKoy</p>
+	  </div>
+	</div>
+
+	<script src="js/jquery-1.11.1.js"></script>
+	<script>
+	  $(function () {
+	  	var vname,vcity,vaddress;
+
+	  	$('#send_btn').click(function(e) {
+	  		textme(vname,vaddress,vcity);
+	  	});
+
+	  	$('#search_4').on('click', function () {
+	  		var list = $.ajax({
+				type: "GET",
+				url: "https://api.foursquare.com/v2/venues/search?ll=40.7,-74&client_id=MO4RHNN4DYVNQL31MKKFEJL20P2E11BEFOEXYU1GNTTCZJQJ&client_secret=HHAD4CLNVOGT3U1TXXCY35PMU442K4DZSE3FHN0IJMSEX5EB&v=20141103",
+				data: {ll: "43.533329, -80.226933", limit: "10", intent: "checkin", query: get_val()},
+				statusCode: {
+				200: function(responseText) {
+					$("#results").html("");
+				 	$(responseText.response.venues).each(function(i, e) {			 	
+				 		$('<label style="margin-right: 5px">' + (i+1) + '.</label><button data-q1="'+this.location.address+'" data-q2="'+this.location.city+'" data-q3="'+this.location.country+'" style="display:inline; width: 200px; margin-bottom: 5px;">'+this.name+'</button><br/>').appendTo('#results');
+				 	});
+				 	$("#results").delegate('button', 'click', function(e) {
+				 		//console.log(e.currentTarget.innerHTML);
+				 		//textme(e.currentTarget.innerHTML);
+
+				 		//console.log($(e.currentTarget).attr('data-q1'));
+
+				 		//console.log($(e.currentTarget).attr('data-q1') + " q2: " + $(e.currentTarget).attr('data-q2') + " q2: " + $(e.currentTarget).attr('data-q3') + " name: " + e.currentTarget.innerHTML)
+				 		vname = e.currentTarget.innerHTML;
+				 		vcity = $(e.currentTarget).attr('data-q2');
+				 		vaddress = $(e.currentTarget).attr('data-q1');
+
+				 		$('#diagnostic').html(vname+','+vcity+','+vaddress);
+
+				 		$("#mapframe").attr('src','https://www.google.com/maps/embed/v1/place?key=AIzaSyDopAL7jlhmAoAJ5x7W-bfhWqkRDQ0kIMM&q='+$(e.currentTarget).attr('data-q1')+'+'+$(e.currentTarget).attr('data-q2')+'+'+$(e.currentTarget).attr('data-q3')+e.currentTarget.innerHTML)
+
+				 	});
+				}
+			  } 
+			});
+	  	});
+	  	
+	  	function textme(name,address,city) {
+	  		var val = $.ajax({
+			  type: "POST",
+			  url: "https://api.twilio.com/2010-04-01/Accounts/AC0b69062f988b7f88fefd29e1e65d9414/Messages",
+			  data: {To: "**********",From: "+12268871557",Body: name + ", " + address + "," + city},
+			  xhrFields: {
+				withCredentials: true
+			  },
+			  statusCode: {
+				200: function(responseText) {
+				  //$('<p style="display:inline">' + responseText + '</p><br/>').appendTo('#results');
+				}
+			  } 
+			});
+	  	}
+
+
+		function get_val() {
+		  return $('#message_field').val();
+		}
+	  });
+	</script>
+	
+
+    
+  </body>
+</html>
